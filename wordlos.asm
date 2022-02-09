@@ -21,6 +21,23 @@ start:
 main_loop:
     call draw_board
 
+    ; Setting the cursor to the right position
+    mov cx, [game_state]            ; get current state (word:letter)
+    mov al, 4
+    mul cl
+    add al, 31
+    mov dl, al                      ; set current column
+
+    mov al, 2
+    mul ch
+    add al, 4
+    mov dh, al                      ; set current line
+
+
+    mov ah, 02h                     ;Set cursor position function
+    mov bh, 0                       ;Page number
+    int 10h                         ;Interrupt call
+
 check_input:
     mov ah, 0                       ; get keystroke
     int 0x16                        ; bios service to get input
@@ -119,7 +136,7 @@ print_letter:
 
 
 ;;; GAME GLOBAL VARIABLES
-game_state:         db 0            ; current word : current letter
+game_state:         dw 0            ; current word : current letter
 game_words:
     db "     "
     db "     "
