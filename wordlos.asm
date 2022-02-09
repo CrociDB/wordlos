@@ -41,7 +41,7 @@ check_input:
     mov ah, 0                       ; get keystroke
     int 0x16                        ; bios service to get input
 
-    cmp al, 0x0d                    ; 0x - Enter
+    cmp al, 0x0d                    ; 0x0d - Enter
     je check_input                  ; for now, just loop
 
     cmp al, 0x1b	                ; escape key
@@ -65,10 +65,31 @@ check_input:
     jmp check_input
 
 lower_add_letter:
-    sub al, 0x20                    ; makes it lower case
+    add al, 0x20                    ; makes it lower case
 add_letter:
+    push ax
 
-    jmp check_input
+    mov ax, [game_state]
+    mov [game_w], ah
+    mov [game_l], al
+
+    xor ax, ax                      ; resetting AX
+    mov al, 5                       ; 5 letter per word
+    mov bl, byte [game_w]           ; get current word
+    mul bl                          ; multiply by the amount of words
+    add al, byte [game_l]           ; adding the current letter
+    mov bx, game_words              ; getting pointer to word list
+    add ax, bx                      ; adding pointer to offset
+    mov bp, ax                      ; setting to bp
+
+    pop ax
+    mov byte [bp], al
+    mov al, [game_l]
+    inc al
+    mov ah, [game_w]
+    mov [game_state], ax
+
+    jmp main_loop
 
 
 exit:
@@ -166,9 +187,9 @@ print_letter:
 ;;; GAME GLOBAL VARIABLES
 game_state:         dw 0            ; current word : current letter
 game_words:
-    db "testz"
-    db "abcde"
-    db "yo   "
+    db "     "
+    db "     "
+    db "     "
     db "     "
     db "     "
     db "     "
