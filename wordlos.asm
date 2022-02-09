@@ -33,7 +33,6 @@ main_loop:
     add al, 4
     mov dh, al                      ; set current line
 
-
     mov ah, 02h                     ;Set cursor position function
     mov bh, 0                       ;Page number
     int 10h                         ;Interrupt call
@@ -68,6 +67,7 @@ check_input:
 lower_add_letter:
     sub al, 0x20                    ; makes it lower case
 add_letter:
+
     jmp check_input
 
 
@@ -150,6 +150,7 @@ print_letter:
 
     mov ah, 0x78                    ; for now setting the color by hand
     mov al, byte [bp]               ; copying the character on the table to AL
+    sub al, 0x20
     mov di, [game_pos]              ; adding the cursor position offset to DI
     mov [es:di], ax                 ; setting the current char in AX to video memory
 
@@ -165,9 +166,9 @@ print_letter:
 ;;; GAME GLOBAL VARIABLES
 game_state:         dw 0            ; current word : current letter
 game_words:
-    db "TESTZ"
-    db "ABCDE"
-    db "ZY   "
+    db "testz"
+    db "abcde"
+    db "yo   "
     db "     "
     db "     "
     db "     "
