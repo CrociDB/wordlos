@@ -108,6 +108,9 @@ _print_letter:
     ;           bx - current word
     ;
 print_letter:
+    mov byte [game_l], cl
+    mov byte [game_w], bl
+
     push cx                         ; draw_box function will change CX and BX, so we keep it
     push bx
 
@@ -118,14 +121,38 @@ print_letter:
     mul cx
     add ax, 52
     push ax
+    mov [game_pos], ax              ; saving current column to be used later
 
     mov ax, 160 * 2
     mul bx
     add ax, 160 * 2
     push ax                         ; vertical position
+    
+    add ax, [game_pos]              ; adding column to line to use later
+    add ax, 2                       ; ONE character offset, middle of the box
+    mov [game_pos], ax              ; saving current cursor position
+
 
     call draw_box
     add sp, 8
+
+    ; Print current letter
+    xor ax, ax                      ; resetting AX
+    mov al, 5                       ; 5 letter per word
+    mov bl, byte [game_w]           ; get current word
+    dec bl                          ; bl -= 1
+    mul bl                          ; multiply by the amount of words
+    add al, byte [game_l]           ; adding the current letter
+    dec al                          ; al -= 1
+    mov bx, game_words              ; getting pointer to word list
+    add ax, bx                      ; adding pointer to offset
+    mov bp, ax                      ; setting to bp
+
+    mov ah, 0x78                    ; for now setting the color by hand
+    mov al, byte [bp]               ; copying the character on the table to AL
+    mov di, [game_pos]              ; adding the cursor position offset to DI
+    mov [es:di], ax                 ; setting the current char in AX to video memory
+
     pop bx
     pop cx
     ret
@@ -138,12 +165,16 @@ print_letter:
 ;;; GAME GLOBAL VARIABLES
 game_state:         dw 0            ; current word : current letter
 game_words:
+    db "TESTZ"
+    db "ABCDE"
+    db "ZY   "
     db "     "
     db "     "
     db "     "
-    db "     "
-    db "     "
-    db "     "
+
+game_w:             db 0            ; current word used in functions
+game_l:             db 0            ; current letter used in functions
+game_pos:           dw 0            ; current position used in functions
 
 ;;; GAME CONSTANTS
 
