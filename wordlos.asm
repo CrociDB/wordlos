@@ -13,9 +13,9 @@
 
 start:
     ; Game title
-    mov ah, 0x67
+    mov ah, 0x07
     mov bp, title_string
-    mov cx, 62
+    mov cx, 72
     call print_string
 
 main_loop:
@@ -37,7 +37,55 @@ exit:
 
     ;
     ; Draws the board with the current game state
+    ; go word by word and print the data
+    ;5
 draw_board:
+    mov cx, 6                       ; 6 words
+_print_word:
+    call print_word
+    loop _print_word
+    ret
+
+    ;
+    ; Print one word
+    ; Params:   cx - current word
+    ;
+print_word:
+    mov bx, cx                      ; save current word
+    push cx
+    mov cx, 5                       ; 5 letters
+_print_letter:
+    call print_letter
+    loop _print_letter
+    pop cx
+    ret
+
+    ;
+    ; Prints one letter
+    ; Params:   cx - current letter
+    ;           bx - current word
+    ;
+print_letter:
+    push cx
+    push bx
+    push 0x7800                     ; color
+    push 0x0103                     ; box dimensions 
+
+    mov ax, 8
+    mul cx
+    add ax, 52
+    push ax
+
+    mov ax, 160 * 2
+    mul bx
+    add ax, 160 * 2
+    push ax                         ; vertical position
+
+    call draw_box
+    add sp, 8
+    pop bx
+    pop cx
+    ret
 
 
 ;;; BASE LIBRARY
