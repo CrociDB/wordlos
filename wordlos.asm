@@ -25,9 +25,34 @@ check_input:
     mov ah, 0                       ; get keystroke
     int 0x16                        ; bios service to get input
 
-    cmp ah, 0x1                     ; escape key
-    jne check_input
-    jmp exit
+    cmp al, 0x0d                    ; 0x - Enter
+    je check_input                  ; for now, just loop
+
+    cmp al, 0x1b	                ; escape key
+    je exit
+
+    ; Check if it's within the character range and check case
+    ; A-Z: 0x41-0x5A
+    ; a-z: 0x61-0x7A
+
+    cmp al, 0x41
+    jl check_input                  ; less than `A`
+    cmp al, 0x7a
+    jg check_input                  ; greater than `z`
+
+    cmp al, 0x61
+    jge add_letter                  ; it means it's already in range a-z
+
+    cmp al, 0x5a
+    jle lower_add_letter            ; it's within A-Z, needs lower case
+
+    jmp check_input
+
+lower_add_letter:
+    sub al, 0x20                    ; makes it lower case
+add_letter:
+    jmp check_input
+
 
 exit:
     int 0x20                        ; exit
@@ -66,8 +91,9 @@ _print_letter:
     ;           bx - current word
     ;
 print_letter:
-    push cx
+    push cx                         ; draw_box function will change CX and BX, so we keep it
     push bx
+
     push 0x7800                     ; color
     push 0x0103                     ; box dimensions 
 
