@@ -22,7 +22,7 @@ main_loop:
     call draw_board
 
     ; Setting the cursor to the right position
-    mov cx, [game_state]            ; get current state (word:letter)
+    mov cx, [game_state_letter]            ; get current state (word:letter)
     mov al, 4
     mul cl
     add al, 31
@@ -70,11 +70,15 @@ check_input:
 lower_add_letter:
     add al, 0x20                    ; makes it lower case
 add_letter:
+    mov cl, byte [game_state_letter]
+    cmp cl, 5
+    je main_loop
+
     push ax
 
-    mov ax, [game_state]
-    mov [game_w], ah
-    mov [game_l], al
+    mov ax, [game_state_letter]     ; copies the letter and the word
+    mov byte [game_w], ah
+    mov byte [game_l], al
     xor ax, ax                      ; resetting AX
     mov al, 5                       ; 5 letter per word
     mov bl, byte [game_w]           ; get current word
@@ -86,17 +90,22 @@ add_letter:
 
     pop ax
     mov byte [bp], al
-    mov al, [game_l]
+    mov al, byte [game_l]
     inc al
-    mov ah, [game_w]
-    mov [game_state], ax
+    mov ah, byte [game_w]
+    mov byte [game_state_letter], al
+    mov byte [game_state_word], ah
 
     jmp main_loop
 
 del_letter:
-    mov ax, [game_state]
-    mov [game_w], ah
-    mov [game_l], al
+    mov al, byte [game_state_letter]
+    cmp al, 0                       ; if it's already the first letter, skip
+    je main_loop
+
+    mov ax, [game_state_letter]
+    mov byte [game_w], ah
+    mov byte [game_l], al
     xor ax, ax                      ; resetting AX
     mov al, 5                       ; 5 letter per word
     mov bl, byte [game_w]           ; get current word
@@ -109,11 +118,9 @@ del_letter:
     
     mov byte [bp], 0x20             ; setting space, "empty letter"
     
-    mov ax, [game_state]
-    cmp al, 0                       ; if it's already the first letter, skip
-    je main_loop
+    mov al, byte [game_state_letter]
     dec al                          ; go back to the previous position
-    mov [game_state], ax
+    mov byte [game_state_letter], al
 
     jmp main_loop
 
@@ -211,7 +218,8 @@ print_letter:
 
 
 ;;; GAME GLOBAL VARIABLES
-game_state:         dw 0            ; current word : current letter
+game_state_letter:          db 0            ; current letter
+game_state_word:            db 0            ; current word
 game_words:
     db "     "
     db "     "
