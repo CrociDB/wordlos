@@ -45,7 +45,7 @@ check_input:
     je del_letter  
 
     cmp al, 0x0d                    ; 0x0d - Enter
-    je check_input                  ; for now, just loop
+    je confirm_word                 ; for now, just loop
 
     cmp al, 0x1b	                ; escape key
     je exit
@@ -124,6 +124,16 @@ del_letter:
 
     jmp main_loop
 
+confirm_word:
+    mov al, byte [game_state_letter]
+    cmp al, 4                       ; comparing if it's in the last letter
+    jne check_input
+
+    ; 1) compare if it's in the word list
+
+    ; 2) compare with the selected word and set state
+
+    jmp main_loop
 
 exit:
     int 0x20                        ; exit
@@ -168,7 +178,27 @@ print_letter:
     push cx                         ; draw_box function will change CX and BX, so we keep it
     push bx
 
-    push 0x7800                     ; color
+    ; pointer to the letter in board
+    ; used for both letter data and state
+    push bx
+    xor ax, ax                      ; resetting AX
+    mov al, 5                       ; 5 letter per word
+    mov bl, byte [game_w]           ; get current word
+    dec bl                          ; bl -= 1
+    mul bl                          ; multiply by the amount of words
+    add al, byte [game_l]           ; adding the current letter
+    dec al                          ; al -= 1
+    mov [game_letter_ptr], ax       ; saving it to the pointer variable
+
+    mov bx, game_words_state        ; getting pointer to the word/letters state
+    add ax, bx                      ; adding pointer to offset
+    mov bp, ax                      ; setting bp to the pointer
+    xor ax, ax                      ; resetting ax
+    mov ah, byte [bp]               ; getting the state data
+    mov byte [game_letter_selected_color], ah
+    pop bx
+
+    push ax                         ; pushing the state as a color to the box function
     push 0x0103                     ; box dimensions 
 
     mov ax, 8
@@ -188,21 +218,15 @@ print_letter:
 
 
     call draw_box
-    add sp, 8
+    add sp, 8                       ; returns the stack pointer, same as pop 4 times
 
     ; Print current letter
-    xor ax, ax                      ; resetting AX
-    mov al, 5                       ; 5 letter per word
-    mov bl, byte [game_w]           ; get current word
-    dec bl                          ; bl -= 1
-    mul bl                          ; multiply by the amount of words
-    add al, byte [game_l]           ; adding the current letter
-    dec al                          ; al -= 1
+    mov ax, [game_letter_ptr]
     mov bx, game_words              ; getting pointer to word list
     add ax, bx                      ; adding pointer to offset
     mov bp, ax                      ; setting to bp
 
-    mov ah, 0x78                    ; for now setting the color by hand
+    mov ah, byte [game_letter_selected_color] ; setting the current state color
     mov al, byte [bp]               ; copying the character on the table to AL
     sub al, 0x20
     mov di, [game_pos]              ; adding the cursor position offset to DI
@@ -213,11 +237,16 @@ print_letter:
     ret
 
 
+check_word:
+
+
+
 ;;; BASE LIBRARY
 %include "lib.asm"
 
 
 ;;; GAME GLOBAL VARIABLES
+game_selected_world:        dw 0            ; pointer to the selected word in the list
 game_state_letter:          db 0            ; current letter
 game_state_word:            db 0            ; current word
 game_words:
@@ -228,9 +257,25 @@ game_words:
     db "     "
     db "     "
 
-game_w:             db 0            ; current word used in functions
-game_l:             db 0            ; current letter used in functions
-game_pos:           dw 0            ; current position used in functions
+; the state is the color of the background:
+;   - 0x78: empty
+;   - 0x87: letter not in word
+;   - 0xE0: letter in word
+;   - 0x2F: letter in correct position
+game_words_state:
+    db 0xE0,0xE0,0x78,0xE0,0x2F
+    db 0x78,0x78,0x78,0x78,0x2F
+    db 0x78,0x78,0x78,0x78,0x2F
+    db 0x78,0x78,0x78,0x78,0x2F
+    db 0x78,0x78,0x78,0x78,0x2F
+    db 0x78,0x78,0x78,0x78,0x2F
+
+game_w:                     db 0            ; current word used in functions
+game_l:                     db 0            ; current letter used in functions
+game_pos:                   dw 0            ; current position used in functions
+game_letter_ptr:            dw 0            ; pointer for the ltter in general
+game_letter_selected_color  db 0            ;   ... selected state
+
 
 ;;; GAME CONSTANTS
 

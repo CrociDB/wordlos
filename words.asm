@@ -1,3 +1,5 @@
+word_count:
+    dw 2499
 word_list:
     db "aback"
     db "abase"
