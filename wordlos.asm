@@ -18,6 +18,14 @@ start:
     mov cx, 72
     call print_string
 
+start_game:
+    ; pick word
+    mov ax, 0
+    mov bx, 5
+    mul bx
+    add ax, word_list
+    mov [game_selected_world], ax
+
 main_loop:
     call draw_board
 
@@ -132,9 +140,14 @@ confirm_word:
     ; 1) compare if it's in the word list
     call check_valid_word
     cmp ah, 0                       ; if ah == 0, then word is valid
-    jne check_input                        ; TODO: display an error here
+    jne check_input                 ; TODO: display an error here
 
     ; 2) compare with the selected word and set state
+    call update_word_state
+    cmp ah, 1                       ; if ah == 1, then player won
+    je exit
+    cmp ah, 2                       ; if ah == 2, then player lost
+    je exit
 
     ; 3) increment word
     mov al, byte [game_state_word]
@@ -302,6 +315,65 @@ _check_equal_letter_continue:
     loop _check_valid_word_init     ; loop words
     ; ... if it got here, there are no similar words
     mov ah, 1
+    ret
+
+    ;
+    ; Check the status letter by letter 
+    ; Return:   AH:     0 if ok
+    ;                   1 if won
+    ;                   2 if lost
+    ;
+update_word_state:
+    ; get access to the current word
+    mov ax, 5                       ; 5 letter per word
+    mov bl, byte [game_state_word]  ; get current word
+    mul bl                          ; multiply by the amount of words
+    add ax, game_words              ; adding the offset to the address
+    mov [general_ptr1], ax          ; saving it to the pointer variable
+
+    ; get access to the current word's state
+    mov ax, 5                       ; 5 letter per word
+    mov bl, byte [game_state_word]  ; get current word
+    mul bl                          ; multiply by the amount of words
+    add ax, game_words_state        ; adding the offset to the address
+    mov [general_ptr2], ax          ; saving it to the pointer variable
+
+    ; for every letter:
+    mov cx, 5
+_letter_iteration:
+    ; 1) check if the same index letter is the same, then green
+    mov ax, [general_ptr1]          ; pointer to the word
+    add ax, cx                      ; add letter offset
+    dec ax
+    mov bp, ax
+    mov ah, byte [bp]               ; copy letter to ah
+
+    push ax
+    mov ax, [game_selected_world]   ; pointer to the word
+    add ax, cx                      ; add letter offset
+    dec ax
+    mov bp, ax
+    pop ax
+    mov al, byte [bp]
+
+    cmp ah, al                      ; check if the letters are the same
+    jne _update_loop
+    
+    ; if it is, set this letter state to green
+    mov ax, [general_ptr2]          ; pointer to the word
+    add ax, cx                      ; add letter offset
+    dec ax
+    mov bp, ax
+    mov byte [bp], 0x2F             ; set 'letter in right position' state
+
+_update_loop:
+    loop _letter_iteration
+
+    ; 2) otherwise check if there's other letter in that word that is the same
+    ;       ... then yellow
+    
+_return:
+    mov ah, 0
     ret
 
 
