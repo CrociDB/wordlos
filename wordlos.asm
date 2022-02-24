@@ -126,12 +126,21 @@ del_letter:
 
 confirm_word:
     mov al, byte [game_state_letter]
-    cmp al, 4                       ; comparing if it's in the last letter
+    cmp al, 5                       ; comparing if it's in the last letter
     jne check_input
 
     ; 1) compare if it's in the word list
+    call check_valid_word
+    cmp ah, 0                       ; if ah == 0, then word is valid
+    jne check_input                        ; TODO: display an error here
 
     ; 2) compare with the selected word and set state
+
+    ; 3) increment word
+    mov al, byte [game_state_word]
+    inc al
+    mov byte [game_state_word], al
+    mov byte [game_state_letter], 0
 
     jmp main_loop
 
@@ -236,9 +245,64 @@ print_letter:
     pop cx
     ret
 
+    ;
+    ; Check if the input word is in the list of words
+    ; Return:   AH - 0 if word is valid
+    ;
+check_valid_word:
+    mov cx, [word_count]            ; copy the amount of words
 
-check_word:
+_check_valid_word_init:
+    ; 1) get pointer to the current word
+    xor ax, ax                      ; resetting AX
+    mov al, 5                       ; 5 letter per word
+    mov bl, byte [game_state_word]  ; get current word
+    mul bl                          ; multiply by the amount of words
+    add ax, game_words              ; ; adding the offset to the address
+    mov [general_ptr1], ax          ; saving it to the pointer variable
 
+    ; 2) get pointer to current word in list
+    mov ax, 5                       ; 5 letter per word
+    mov bx, cx
+    dec bx
+    mul bx                          ; multiply by the amount of words
+    add ax, word_list               ; adding the offset to the address
+    mov [general_ptr2], ax          ; saving it to the pointer variable
+
+    ; 3) in order to compare letter by letter, you must
+    push cx
+
+    mov cx, 5                       ; 5 letters
+_check_equal_letter:
+    mov ax, [general_ptr1]          ; copy address of the first pointer
+    add ax, cx                      ; adding current letter offset
+    dec ax
+    mov bp, ax
+    xor ax, ax
+    mov al, byte [bp]               ; get letter value
+    push ax                         ; store letter from pointer 1
+
+    mov ax, [general_ptr2]          ; copy address of the second pointer
+    add ax, cx                      ; adding current letter offset
+    dec ax
+    mov bp, ax
+    pop ax                          ; restore previous letter value
+    mov ah, byte [bp]               ; get letter value
+
+    cmp ah, al
+
+    jne _check_equal_letter_continue
+    loop _check_equal_letter        ; loop letters    
+    ; ... if it got here, all words are the same, so it's good
+    pop cx
+    mov ah, 0
+    ret
+_check_equal_letter_continue:
+    pop cx
+    loop _check_valid_word_init     ; loop words
+    ; ... if it got here, there are no similar words
+    mov ah, 1
+    ret
 
 
 ;;; BASE LIBRARY
@@ -263,18 +327,21 @@ game_words:
 ;   - 0xE0: letter in word
 ;   - 0x2F: letter in correct position
 game_words_state:
-    db 0xE0,0xE0,0x78,0xE0,0x2F
-    db 0x78,0x78,0x78,0x78,0x2F
-    db 0x78,0x78,0x78,0x78,0x2F
-    db 0x78,0x78,0x78,0x78,0x2F
-    db 0x78,0x78,0x78,0x78,0x2F
-    db 0x78,0x78,0x78,0x78,0x2F
+    db 0x78,0x78,0x78,0x78,0x78
+    db 0x78,0x78,0x78,0x78,0x78
+    db 0x78,0x78,0x78,0x78,0x78
+    db 0x78,0x78,0x78,0x78,0x78
+    db 0x78,0x78,0x78,0x78,0x78
+    db 0x78,0x78,0x78,0x78,0x78
 
 game_w:                     db 0            ; current word used in functions
 game_l:                     db 0            ; current letter used in functions
 game_pos:                   dw 0            ; current position used in functions
 game_letter_ptr:            dw 0            ; pointer for the ltter in general
-game_letter_selected_color  db 0            ;   ... selected state
+game_letter_selected_color: db 0            ;   ... selected state
+
+general_ptr1:                dw 0            ; just general pointer
+general_ptr2:                dw 0            ; just general pointer
 
 
 ;;; GAME CONSTANTS
