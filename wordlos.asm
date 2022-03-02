@@ -381,10 +381,10 @@ _letter_on_word_iteration:
 _update_set_yellow:
     ; set this letter state to yellow
     mov ax, [general_ptr2]          ; pointer to the word
-    add ax, [general_value]                      ; add letter offset
+    add ax, [general_value]         ; add letter offset
     dec ax
     mov bp, ax
-    mov byte [bp], 0x3E             ; set 'letter in word' state
+    mov byte [bp], 0x6E             ; set 'letter in word' state
     loop _letter_on_word_iteration
     pop cx
     jmp _update_loop
