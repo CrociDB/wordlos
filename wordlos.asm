@@ -342,11 +342,13 @@ update_word_state:
     mov cx, 5
 _letter_iteration:
     ; 1) check if the same index letter is the same, then green
+    mov [general_value], cx         ; saving current main word letter
     mov ax, [general_ptr1]          ; pointer to the word
     add ax, cx                      ; add letter offset
     dec ax
     mov bp, ax
     mov ah, byte [bp]               ; copy letter to ah
+    mov byte [game_l], ah           ; also store it on game_l
 
     push ax
     mov ax, [game_selected_world]   ; pointer to the word
@@ -357,21 +359,50 @@ _letter_iteration:
     mov al, byte [bp]
 
     cmp ah, al                      ; check if the letters are the same
-    jne _update_loop
+    je _update_set_green
+
+    ; 2) check if any of the letters is right
+    push cx
+    mov cx, 5
+_letter_on_word_iteration:
+    mov ax, [game_selected_world]   ; pointer to the word
+    add ax, cx                      ; add letter offset
+    dec ax
+    mov bp, ax
+    mov al, byte [bp]
+    mov ah, byte [game_l]
+
+    cmp ah, al                      ; check if the letters are the same
+    je _update_set_yellow
+    loop _letter_on_word_iteration
+    pop cx
+    jmp _update_loop
+
+_update_set_yellow:
+    ; set this letter state to yellow
+    mov ax, [general_ptr2]          ; pointer to the word
+    add ax, [general_value]                      ; add letter offset
+    dec ax
+    mov bp, ax
+    mov byte [bp], 0x3E             ; set 'letter in word' state
+    loop _letter_on_word_iteration
+    pop cx
+    jmp _update_loop
+
     
-    ; if it is, set this letter state to green
+_update_set_green:
+    ; set this letter state to green
     mov ax, [general_ptr2]          ; pointer to the word
     add ax, cx                      ; add letter offset
     dec ax
     mov bp, ax
     mov byte [bp], 0x2F             ; set 'letter in right position' state
+    jmp _update_loop
 
 _update_loop:
     loop _letter_iteration
+    jmp _return
 
-    ; 2) otherwise check if there's other letter in that word that is the same
-    ;       ... then yellow
-    
 _return:
     mov ah, 0
     ret
@@ -396,7 +427,7 @@ game_words:
 ; the state is the color of the background:
 ;   - 0x78: empty
 ;   - 0x87: letter not in word
-;   - 0xE0: letter in word
+;   - 0x3E: letter in word
 ;   - 0x2F: letter in correct position
 game_words_state:
     db 0x78,0x78,0x78,0x78,0x78
@@ -412,8 +443,9 @@ game_pos:                   dw 0            ; current position used in functions
 game_letter_ptr:            dw 0            ; pointer for the ltter in general
 game_letter_selected_color: db 0            ;   ... selected state
 
-general_ptr1:                dw 0            ; just general pointer
-general_ptr2:                dw 0            ; just general pointer
+general_ptr1:               dw 0            ; just general pointer
+general_ptr2:               dw 0            ; just general pointer
+general_value:              dw 0            ; just a general-use value
 
 
 ;;; GAME CONSTANTS
