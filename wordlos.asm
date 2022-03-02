@@ -1,8 +1,13 @@
     org 0x0100
 
-; Set 80-25 text mode
+    ; Set 80-25 text mode
     mov ax, 0x0002
     int 0x10
+
+    ; disable blinking chars (so we get all 16 background colors)
+    mov ax, 0x1003
+    mov bx, 0
+    int 10h
 
     mov ax, 0xb800                  ; Segment for the video data
     mov es, ax
@@ -374,6 +379,7 @@ _letter_on_word_iteration:
 
     cmp ah, al                      ; check if the letters are the same
     je _update_set_yellow
+    
     loop _letter_on_word_iteration
     pop cx
     jmp _update_loop
@@ -384,7 +390,7 @@ _update_set_yellow:
     add ax, [general_value]         ; add letter offset
     dec ax
     mov bp, ax
-    mov byte [bp], 0x6E             ; set 'letter in word' state
+    mov byte [bp], 0xE0             ; set 'letter in word' state
     loop _letter_on_word_iteration
     pop cx
     jmp _update_loop
@@ -427,7 +433,7 @@ game_words:
 ; the state is the color of the background:
 ;   - 0x78: empty
 ;   - 0x87: letter not in word
-;   - 0x3E: letter in word
+;   - 0xE0: letter in word
 ;   - 0x2F: letter in correct position
 game_words_state:
     db 0x78,0x78,0x78,0x78,0x78
