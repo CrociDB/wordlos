@@ -18,6 +18,38 @@ _0:
 
 
     ;
+    ; Print number function
+    ; Params:   AX      - num value
+    ;           [bp+2]  - position/offset
+    ;           [bp+4]  - background/foreground color
+    ;
+print_number:
+    mov bp, sp
+    mov di, [bp+2]
+    xor cx, cx
+_get_unit:
+    cmp ax, 0
+    je _print
+    xor dx, dx
+    mov bx, 10
+    div bx
+    xor bx, bx
+    mov bl, dl
+    push bx
+    inc cx
+    jmp _get_unit
+
+_print:
+    pop ax
+    add al, '0'                     ; Add char `0` to value
+    mov ah, byte [bp+5]             ; Copy color info
+    stosw
+    loop _print
+_p_exit:
+    ret
+
+
+    ;
     ; Draw box function
     ; Params:   [bp+2] - row offset
     ;           [bp+4] - column offset
