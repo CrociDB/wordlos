@@ -487,11 +487,17 @@ c_game_score:           db "SCORE: ",0
 ; 24 chars
 c_message_win:
     db "WHAT A SHOT! 100 POINTS",0
-    db "IMPRESSIVE! 50 POINTS  ",0
-    db "INCREDIBLE! 10 POINTS  ",0
-    db "PRETTY GOOD! 5 POINTS  ",0
-    db "GOOD ENOUGH! 2 POINTS  ",0
-    db "NICE! 1 POINT          ",0
+    db "  IMPRESSIVE! 50 POINTS",0
+    db "  INCREDIBLE! 10 POINTS",0
+    db "  PRETTY GOOD! 5 POINTS",0
+    db "  GOOD ENOUGH! 2 POINTS",0
+    db "          NICE! 1 POINT",0
+
+c_message_invalid:
+    db " WORD NOT IN DICTIONARY",0
+
+c_message_lost:
+    db "    THE WORD WAS: ",0
 
 c_score_board:
     dw 100
