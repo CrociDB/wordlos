@@ -24,8 +24,16 @@ start:
     call print_string
 
 start_game:
-    ; pick word
-    mov ax, 0
+
+    ; 1) randomize a word from the list
+    mov ah, 0x00                        ; BIOS service to get system time
+    int 0x1a                            ; AX contains the value
+
+    mov bx, word [word_count]           ; get the amount of words
+    mov ax, dx                          ; Copies the time fetched by interruption
+    xor dx, dx                          ; Resets DX because DIV will use DXAX
+    div bx                              ; AX = (DXAX) / bx ; DX = remainder
+    mov ax, dx                          ; moves the current word index to AX
     mov bx, 5
     mul bx
     add ax, word_list
@@ -380,6 +388,11 @@ _letter_on_word_iteration:
     cmp ah, al                      ; check if the letters are the same
     je _update_set_yellow
     
+    mov ax, [general_ptr2]          ; pointer to the word
+    add ax, [general_value]         ; add letter offset
+    dec ax
+    mov bp, ax
+    mov byte [bp], 0x87             ; set 'letter in word' state
     loop _letter_on_word_iteration
     pop cx
     jmp _update_loop
@@ -391,7 +404,6 @@ _update_set_yellow:
     dec ax
     mov bp, ax
     mov byte [bp], 0xE0             ; set 'letter in word' state
-    loop _letter_on_word_iteration
     pop cx
     jmp _update_loop
 
