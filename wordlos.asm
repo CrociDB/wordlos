@@ -19,7 +19,7 @@
 start:
     ; Game title
     mov ah, 0x07
-    mov bp, title_string
+    mov bp, c_title_string
     mov cx, 72
     call print_string
 
@@ -455,6 +455,8 @@ game_words_state:
     db 0x78,0x78,0x78,0x78,0x78
     db 0x78,0x78,0x78,0x78,0x78
 
+game_score:                 dw 0            ; global game score
+
 game_w:                     db 0            ; current word used in functions
 game_l:                     db 0            ; current letter used in functions
 game_pos:                   dw 0            ; current position used in functions
@@ -468,6 +470,25 @@ general_value:              dw 0            ; just a general-use value
 
 ;;; GAME CONSTANTS
 
-title_string:       db "WORDLOS",0
+c_title_string:         db "WORDLOS",0
+c_game_score:           db "SCORE: ",0
+
+; 24 chars
+c_message_win:
+    db "WHAT A SHOT! 100 POINTS",0
+    db "IMPRESSIVE! 50 POINTS  ",0
+    db "INCREDIBLE! 10 POINTS  ",0
+    db "PRETTY GOOD! 5 POINTS  ",0
+    db "GOOD ENOUGH! 2 POINTS  ",0
+    db "NICE! 1 POINT          ",0
+
+c_score_board:
+    dw 100
+    dw 50
+    dw 10
+    dw 5
+    dw 2
+    dw 1
+
 
 %include "words.asm"
