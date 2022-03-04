@@ -19,13 +19,17 @@ _0:
 
     ;
     ; Print number function
-    ; Params:   AX      - num value
-    ;           [bp+2]  - position/offset
-    ;           [bp+4]  - background/foreground color
+    ; Params:   AX              - num value
+    ;           DI              - position/offset
+    ;           general_value   - background/foreground color
     ;
 print_number:
-    mov bp, sp
-    mov di, [bp+2]
+    cmp ax, 0
+    jne _init
+    mov cx, 1
+    push 0
+    jmp _print
+_init:
     xor cx, cx
 _get_unit:
     cmp ax, 0
@@ -42,7 +46,7 @@ _get_unit:
 _print:
     pop ax
     add al, '0'                     ; Add char `0` to value
-    mov ah, byte [bp+5]             ; Copy color info
+    mov ah, byte [general_value]    ; Copy color info
     stosw
     loop _print
 _p_exit:

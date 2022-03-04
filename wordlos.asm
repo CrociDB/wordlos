@@ -18,7 +18,7 @@
 
 start:
     ; Game title
-    mov ah, 0x07
+    mov ah, 0x0F
     mov bp, c_title_string
     mov cx, 72
     call print_string
@@ -36,11 +36,22 @@ start_game:
     mov ax, dx                          ; moves the current word index to AX
     mov bx, 5
     mul bx
-    add ax, word_list
+    add ax, word_list 
     mov [game_selected_world], ax
 
 main_loop:
     call draw_board
+
+    ; print score
+    mov ah, 0x08
+    mov bp, c_game_score
+    mov cx, 320
+    call print_string
+
+    mov ax, [game_score]
+    mov di, 334
+    mov byte [general_value], 0x0F
+    call print_number
 
     ; Setting the cursor to the right position
     mov cx, [game_state_letter]            ; get current state (word:letter)
