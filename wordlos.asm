@@ -45,11 +45,11 @@ main_loop:
     ; print score
     mov ah, 0x08
     mov bp, c_game_score
-    mov cx, 320
+    mov cx, 2620
     call print_string
 
     mov ax, [game_score]
-    mov di, 334
+    mov di, 2634
     mov byte [general_value], 0x0F
     call print_number
 
