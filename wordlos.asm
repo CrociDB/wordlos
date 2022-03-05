@@ -1,7 +1,14 @@
 %define SCORE_POSITION              2620
+%define SCORE_VALUE_POSITION        2634
+
 %define MESSAGE_POSITION            432
 %define MESSAGE_COLOR_ERROR         0x04
 %define MESSAGE_COLOR_SUCCESS       0x02
+
+%define STATE_COLOR_EMPTY           0x78
+%define STATE_COLOR_NOTINWORD       0x87
+%define STATE_COLOR_INWORD          0xE0
+%define STATE_COLOR_CORRECT         0x2F
 
     org 0x0100
 
@@ -41,7 +48,7 @@ _reset_board:
     mov bp, game_words_state
     mov cx, 30                          ; 6 words with 5 characters
 _reset_board_state:
-    mov byte [bp], 0x78
+    mov byte [bp], STATE_COLOR_EMPTY
     inc bp
     loop _reset_board_state
 
@@ -80,7 +87,7 @@ main_loop:
     call print_string
 
     mov ax, [game_score]
-    mov di, 2634
+    mov di, SCORE_VALUE_POSITION
     mov byte [general_value], 0x0F
     call print_number
 
@@ -481,7 +488,7 @@ _letter_iteration:
     ; 2) check if any of the letters is right
     push cx
     mov cx, 5
-_letter_on_word_iteration:
+_letter_in_word_iteration:
     mov ax, [game_selected_world]   ; pointer to the word
     add ax, cx                      ; add letter offset
     dec ax
@@ -496,8 +503,8 @@ _letter_on_word_iteration:
     add ax, [general_value]         ; add letter offset
     dec ax
     mov bp, ax
-    mov byte [bp], 0x87             ; set 'letter in word' state
-    loop _letter_on_word_iteration
+    mov byte [bp], STATE_COLOR_NOTINWORD   ; set 'letter not in word' state
+    loop _letter_in_word_iteration
     pop cx
     jmp _update_loop
 
@@ -507,7 +514,7 @@ _update_set_yellow:
     add ax, [general_value]         ; add letter offset
     dec ax
     mov bp, ax
-    mov byte [bp], 0xE0             ; set 'letter in word' state
+    mov byte [bp], STATE_COLOR_INWORD  ; set 'letter in word' state
     pop cx
     jmp _update_loop
 
@@ -521,7 +528,7 @@ _update_set_green:
     add ax, cx                      ; add letter offset
     dec ax
     mov bp, ax
-    mov byte [bp], 0x2F             ; set 'letter in right position' state
+    mov byte [bp], STATE_COLOR_CORRECT ; set 'letter in right position' state
     jmp _update_loop
 
 _update_loop:
@@ -555,18 +562,13 @@ game_words:
     db "     "
     db "     "
 
-; the state is the color of the background:
-;   - 0x78: empty
-;   - 0x87: letter not in word
-;   - 0xE0: letter in word
-;   - 0x2F: letter in correct position
 game_words_state:
-    db 0x78,0x78,0x78,0x78,0x78
-    db 0x78,0x78,0x78,0x78,0x78
-    db 0x78,0x78,0x78,0x78,0x78
-    db 0x78,0x78,0x78,0x78,0x78
-    db 0x78,0x78,0x78,0x78,0x78
-    db 0x78,0x78,0x78,0x78,0x78
+    db STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY
+    db STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY
+    db STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY
+    db STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY
+    db STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY
+    db STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY
 
 game_score:                 dw 0            ; global game score
 
