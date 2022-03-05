@@ -7,7 +7,7 @@
 
 %define STATE_COLOR_EMPTY           0x78
 %define STATE_COLOR_NOTINWORD       0x87
-%define STATE_COLOR_INWORD          0xE0
+%define STATE_COLOR_INWORD          0xE7
 %define STATE_COLOR_CORRECT         0x2F
 
     org 0x0100
@@ -239,7 +239,7 @@ win_word:
 
     ; print score
     mov ax, [game_score]
-    mov di, 2634
+    mov di, SCORE_VALUE_POSITION
     mov byte [general_value], 0x0F
     call print_number
 
