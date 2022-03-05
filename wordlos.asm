@@ -1,6 +1,7 @@
 %define SCORE_POSITION              2620
 %define MESSAGE_POSITION            432
-%define MESSAGE_COLOR               0x09
+%define MESSAGE_COLOR_ERROR         0x04
+%define MESSAGE_COLOR_SUCCESS       0x02
 
     org 0x0100
 
@@ -61,7 +62,6 @@ _reset_board_state:
     mov bx, 5
     mul bx
     add ax, word_list 
-    mov ax, word_list                   ; TODO: FORCING THE FIRST WORD FOR NOW
     mov [game_selected_world], ax
 
 main_loop:
@@ -203,7 +203,9 @@ confirm_word:
     je win_word
 
     ; 4) check current game status
-
+    mov al, byte [game_state_word]
+    cmp al, 5                       ; comparing if it's in the last word
+    je lost_word
 
     ; 3) increment word
     mov al, byte [game_state_word]
@@ -215,6 +217,7 @@ confirm_word:
 
 error_not_in_dictionary:
     mov bp, c_message_invalid
+    mov ah, MESSAGE_COLOR_ERROR
     call message_state
     jmp main_loop
 
@@ -234,11 +237,21 @@ win_word:
     call print_number
 
     mov bp, c_message_win   ; TODO: find the right win message
+    mov ah, MESSAGE_COLOR_SUCCESS
     call message_state
     jmp start_game
 
 lost_word:
+    call draw_board
+
+    mov bp, [game_selected_world]
+    mov ah, MESSAGE_COLOR_SUCCESS
+    mov cx, MESSAGE_POSITION + 36
+    mov bx, 5
+    call print_string_fixed
+
     mov bp, c_message_lost
+    mov ah, MESSAGE_COLOR_ERROR
     call message_state
     jmp start_game
 
@@ -253,10 +266,10 @@ exit:
     ; Message state
     ; This will show a message, then wait for input
     ; Params:   BP - string addr
+    ;           AH - message color
     ;
 message_state:
     ; 1) print message
-    mov ah, MESSAGE_COLOR
     mov cx, MESSAGE_POSITION
     call print_string
 

@@ -16,6 +16,24 @@ print_string:
 _0:
     ret
 
+    ;
+    ; Print string function with fixed length and HIGH case
+    ; Params:   AH - background/foreground color
+    ;           BP - string addr
+    ;           BX - length
+    ;           CX - position/offset
+    ;
+print_string_fixed:
+    mov di, cx                      ; Adds offset to DI
+    mov cx, bx
+_psf0:
+    mov al, byte [bp]
+    sub al, 32
+    stosw
+    inc bp                          ; Increments the string pointer
+    loop _psf0
+    ret
+
 
     ;
     ; Print number function
