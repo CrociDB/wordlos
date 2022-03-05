@@ -28,8 +28,28 @@ start:
     call print_string
 
 start_game:
+    ; 1) reset board
+    mov bp, game_words
+    mov cx, 30                          ; 6 words with 5 characters
+_reset_board:
+    mov byte [bp], ' '
+    inc bp
+    loop _reset_board
 
-    ; 1) randomize a word from the list
+    ; 2) reset letter status
+    mov bp, game_words_state
+    mov cx, 30                          ; 6 words with 5 characters
+_reset_board_state:
+    mov byte [bp], 0x78
+    inc bp
+    loop _reset_board_state
+
+    ; 3) reset state
+    mov al, 0
+    mov byte [game_state_letter], al
+    mov byte [game_state_word], al
+
+    ; 4) randomize a word from the list
     mov ah, 0x00                        ; BIOS service to get system time
     int 0x1a                            ; AX contains the value
 
@@ -41,6 +61,7 @@ start_game:
     mov bx, 5
     mul bx
     add ax, word_list 
+    mov ax, word_list                   ; TODO: FORCING THE FIRST WORD FOR NOW
     mov [game_selected_world], ax
 
 main_loop:
@@ -178,10 +199,11 @@ confirm_word:
 
     ; 2) compare with the selected word and set state
     call update_word_state
-    cmp ah, 1                       ; if ah == 1, then player won
-    je exit
-    cmp ah, 2                       ; if ah == 2, then player lost
-    je exit
+    cmp ah, 1                       ; if ah == 1, then player found word
+    je win_word
+
+    ; 4) check current game status
+
 
     ; 3) increment word
     mov al, byte [game_state_word]
@@ -195,6 +217,31 @@ error_not_in_dictionary:
     mov bp, c_message_invalid
     call message_state
     jmp main_loop
+
+win_word:
+    call draw_board
+
+    ; add score
+    ; TODO: add the right score
+    mov ax, [game_score]
+    add ax, [c_score_board]
+    mov [game_score], ax
+
+    ; print score
+    mov ax, [game_score]
+    mov di, 2634
+    mov byte [general_value], 0x0F
+    call print_number
+
+    mov bp, c_message_win   ; TODO: find the right win message
+    call message_state
+    jmp start_game
+
+lost_word:
+    mov bp, c_message_lost
+    call message_state
+    jmp start_game
+
 
 exit:
     int 0x20                        ; exit
@@ -376,10 +423,11 @@ _check_equal_letter_continue:
     ;
     ; Check the status letter by letter 
     ; Return:   AH:     0 if ok
-    ;                   1 if won
-    ;                   2 if lost
+    ;                   1 if all right
     ;
 update_word_state:
+    mov ax, 0
+    mov [general_counter], ax
     ; get access to the current word
     mov ax, 5                       ; 5 letter per word
     mov bl, byte [game_state_word]  ; get current word
@@ -452,6 +500,9 @@ _update_set_yellow:
 
     
 _update_set_green:
+    mov ax, [general_counter]
+    inc ax
+    mov [general_counter], ax
     ; set this letter state to green
     mov ax, [general_ptr2]          ; pointer to the word
     add ax, cx                      ; add letter offset
@@ -465,7 +516,13 @@ _update_loop:
     jmp _return
 
 _return:
+    mov ax, [general_counter]
+    cmp ax, 5
+    je _return_win
     mov ah, 0
+    ret
+_return_win:
+    mov ah, 1
     ret
 
 
@@ -509,6 +566,7 @@ game_letter_selected_color: db 0            ;   ... selected state
 general_ptr1:               dw 0            ; just general pointer
 general_ptr2:               dw 0            ; just general pointer
 general_value:              dw 0            ; just a general-use value
+general_counter:            dw 0            ; just a general-use counter
 
 
 ;;; GAME CONSTANTS
