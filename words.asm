@@ -1,5 +1,5 @@
 word_count:
-    dw 2501
+    dw 2503
 word_list:
     db "aback"
     db "abase"
@@ -2245,6 +2245,7 @@ word_list:
     db "steam"
     db "steel"
     db "steep"
+    db "stear"
     db "steer"
     db "stems"
     db "steps"
@@ -2361,6 +2362,7 @@ word_list:
     db "trans"
     db "traps"
     db "trash"
+    db "tread"
     db "treat"
     db "trees"
     db "trend"
