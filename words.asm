@@ -1,5 +1,5 @@
 word_count:
-    dw 2499
+    dw 2501
 word_list:
     db "aback"
     db "abase"
@@ -2234,6 +2234,7 @@ word_list:
     db "stamp"
     db "stand"
     db "stark"
+    db "stare"
     db "stars"
     db "start"
     db "state"
@@ -2297,6 +2298,7 @@ word_list:
     db "taxes"
     db "teach"
     db "teams"
+    db "teary"
     db "tears"
     db "teens"
     db "teeth"
