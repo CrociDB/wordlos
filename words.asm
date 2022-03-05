@@ -1,5 +1,5 @@
 word_count:
-    dw 2505
+    dw 2506
 word_list:
     db "aback"
     db "abase"
