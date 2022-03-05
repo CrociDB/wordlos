@@ -1,3 +1,7 @@
+%define SCORE_POSITION              2620
+%define MESSAGE_POSITION            432
+%define MESSAGE_COLOR               0x09
+
     org 0x0100
 
     ; Set 80-25 text mode
@@ -42,10 +46,16 @@ start_game:
 main_loop:
     call draw_board
 
+    ; clear message
+    mov bp, c_message_empty
+    mov ah, 0x08
+    mov cx, MESSAGE_POSITION
+    call print_string
+
     ; print score
     mov ah, 0x08
     mov bp, c_game_score
-    mov cx, 2620
+    mov cx, SCORE_POSITION
     call print_string
 
     mov ax, [game_score]
@@ -164,7 +174,7 @@ confirm_word:
     ; 1) compare if it's in the word list
     call check_valid_word
     cmp ah, 0                       ; if ah == 0, then word is valid
-    jne check_input                 ; TODO: display an error here
+    jne error_not_in_dictionary     ; TODO: display an error here
 
     ; 2) compare with the selected word and set state
     call update_word_state
@@ -181,11 +191,33 @@ confirm_word:
 
     jmp main_loop
 
+error_not_in_dictionary:
+    mov bp, c_message_invalid
+    call message_state
+    jmp main_loop
+
 exit:
     int 0x20                        ; exit
 
 
 ;;; GAME FUNCTIONS
+
+    ;
+    ; Message state
+    ; This will show a message, then wait for input
+    ; Params:   BP - string addr
+    ;
+message_state:
+    ; 1) print message
+    mov ah, MESSAGE_COLOR
+    mov cx, MESSAGE_POSITION
+    call print_string
+
+    ; 2) wait for input
+    mov ah, 0                       ; get keystroke
+    int 0x16                        ; bios service to get input
+
+    ret
 
     ;
     ; Draws the board with the current game state
@@ -498,6 +530,9 @@ c_message_invalid:
 
 c_message_lost:
     db "    THE WORD WAS: ",0
+
+c_message_empty:
+    db "                       ",0
 
 c_score_board:
     dw 100
