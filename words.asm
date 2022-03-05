@@ -1,5 +1,5 @@
 word_count:
-    dw 2503
+    dw 2505
 word_list:
     db "aback"
     db "abase"
@@ -2504,3 +2504,5 @@ word_list:
     db "youth"
     db "yummy"
     db "zones"
+    db "bruno"
+    db "croci"
