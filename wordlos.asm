@@ -1,6 +1,10 @@
 %define SCORE_POSITION              2620
 %define SCORE_VALUE_POSITION        2634
 
+%define KEYBOARD_ROW_POSITION1      2772 + 160 + 160
+%define KEYBOARD_ROW_POSITION2      KEYBOARD_ROW_POSITION1 + 322
+%define KEYBOARD_ROW_POSITION3      KEYBOARD_ROW_POSITION2 + 326
+
 %define MESSAGE_POSITION            432
 %define MESSAGE_COLOR_ERROR         0x04
 %define MESSAGE_COLOR_SUCCESS       0x02
@@ -9,6 +13,11 @@
 %define STATE_COLOR_NOTINWORD       0x87
 %define STATE_COLOR_INWORD          0xE7
 %define STATE_COLOR_CORRECT         0x2F
+
+%define KEYBOARD_COLOR_EMPTY        0x0F
+%define KEYBOARD_COLOR_NOTINWORD    0x08
+%define KEYBOARD_COLOR_INWORD       0x0E
+%define KEYBOARD_COLOR_CORRECT      0x02
 
     org 0x0100
 
@@ -57,7 +66,15 @@ _reset_board_state:
     mov byte [game_state_letter], al
     mov byte [game_state_word], al
 
-    ; 4) randomize a word from the list
+    ; 4) reset keyboard states
+    mov bp, game_keyboard_state
+    mov cx, 26
+_reset_keyboard:
+    mov byte [bp], KEYBOARD_COLOR_EMPTY
+    inc bp
+    loop _reset_keyboard
+
+    ; 5) randomize a word from the list
     mov ah, 0x00                        ; BIOS service to get system time
     int 0x1a                            ; AX contains the value
 
@@ -73,6 +90,7 @@ _reset_board_state:
 
 main_loop:
     call draw_board
+    call draw_keyboard
 
     ; clear message
     mov bp, c_message_empty
@@ -230,6 +248,7 @@ error_not_in_dictionary:
 
 win_word:
     call draw_board
+    call draw_keyboard
 
     ; add score
     ; TODO: add the right score
@@ -287,9 +306,63 @@ message_state:
     ret
 
     ;
+    ; Draws the keyboard with the current state for every letter
+    ;
+draw_keyboard:
+    mov ah, 0
+    mov al, 10
+    mov bx, KEYBOARD_ROW_POSITION1
+    call draw_keyboard_row
+
+    mov ah, 10
+    mov al, 19
+    mov bx, KEYBOARD_ROW_POSITION2
+    call draw_keyboard_row
+
+    mov ah, 19
+    mov al, 26
+    mov bx, KEYBOARD_ROW_POSITION3
+    call draw_keyboard_row
+    ret
+
+    ;
+    ; Draws one row of the keyboard
+    ; Params:   AH - range start
+    ;           AL - range end
+    ;           BX - position
+draw_keyboard_row:
+    mov di, bx                      ; set the screen position
+    mov cx, ax                      ; copy range to CX to do the operations
+    sub cl, ch                      ; CL contains the size of the range
+    xor ch, ch                      ; now CX should the loop value
+    mov al, ah                      ; bring the range start AX
+    xor ah, ah
+    mov bp, c_keyboard_rows         ; get the address of the string
+    add bp, ax                      ; add the char offset
+    
+    mov bx, game_keyboard_state     ; keyboard state
+    add bx, ax
+
+_dkr_print:
+    mov ah, byte [bx]
+    mov al, byte [bp]
+    stosw
+    inc bp
+    inc bx
+
+    ; add some spaces
+    mov al, ' '
+    stosw
+    mov al, ' '
+    stosw
+
+    loop _dkr_print
+
+    ret
+    
     ; Draws the board with the current game state
     ; go word by word and print the data
-    ;5
+    ;
 draw_board:
     mov cx, 6                       ; 6 words
 _print_word:
@@ -505,6 +578,14 @@ _letter_in_word_iteration:
     mov bp, ax
     mov byte [bp], STATE_COLOR_NOTINWORD   ; set 'letter not in word' state
     loop _letter_in_word_iteration
+
+    ; set letter state
+    mov bx, [general_ptr1]          ; pointer to the word
+    add bx, [general_value]         ; add letter offset
+    dec bx
+    mov ah, byte [bx]               ; copy the character
+    mov al, KEYBOARD_COLOR_NOTINWORD
+    call set_letter_state
     pop cx
     jmp _update_loop
 
@@ -515,6 +596,14 @@ _update_set_yellow:
     dec ax
     mov bp, ax
     mov byte [bp], STATE_COLOR_INWORD  ; set 'letter in word' state
+    
+    ; set letter state
+    mov bx, [general_ptr1]          ; pointer to the word
+    add bx, [general_value]         ; add letter offset
+    dec bx
+    mov ah, byte [bx]               ; copy the character
+    mov al, KEYBOARD_COLOR_INWORD
+    call set_letter_state
     pop cx
     jmp _update_loop
 
@@ -529,10 +618,21 @@ _update_set_green:
     dec ax
     mov bp, ax
     mov byte [bp], STATE_COLOR_CORRECT ; set 'letter in right position' state
+
+    ; set letter state
+    mov bx, [general_ptr1]          ; pointer to the word
+    add bx, [general_value]         ; add letter offset
+    dec bx
+    mov ah, byte [bx]               ; copy the character
+    mov al, KEYBOARD_COLOR_CORRECT
+    push cx
+    call set_letter_state
+    pop cx
     jmp _update_loop
 
 _update_loop:
-    loop _letter_iteration
+    dec cx
+    jnz _letter_iteration
     jmp _return
 
 _return:
@@ -545,6 +645,29 @@ _return_win:
     mov ah, 1
     ret
 
+    ;
+    ; Set Letter State function
+    ; Params:   AH - character
+    ;           AL - state
+    ;
+;THIS FUNCTION IS NOT WORKING I THINK THE CHAR IS COMING WRONG
+set_letter_state:
+    mov cx, 26
+    mov bp, c_keyboard_rows + 25
+_find_letter_loop:
+    mov bl, byte [bp]
+    add bl, 32                      ; making it lower case to test with
+    cmp bl, ah
+    je _set_letter
+    dec bp
+    loop _find_letter_loop
+    ret
+_set_letter:
+    mov bp, game_keyboard_state
+    add bp, cx
+    dec bp
+    mov byte [bp], al
+    ret
 
 ;;; BASE LIBRARY
 %include "lib.asm"
@@ -569,6 +692,9 @@ game_words_state:
     db STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY
     db STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY
     db STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY,STATE_COLOR_EMPTY
+
+game_keyboard_state:
+    db 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
 game_score:                 dw 0            ; global game score
 
@@ -606,6 +732,9 @@ c_message_lost:
 
 c_message_empty:
     db "                       ",0
+
+c_keyboard_rows:
+    db "QWERTYUIOPASDFGHJKLZXCVBNM"
 
 c_score_board:
     dw 100
