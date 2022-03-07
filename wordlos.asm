@@ -650,7 +650,6 @@ _return_win:
     ; Params:   AH - character
     ;           AL - state
     ;
-;THIS FUNCTION IS NOT WORKING I THINK THE CHAR IS COMING WRONG
 set_letter_state:
     mov cx, 26
     mov bp, c_keyboard_rows + 25
