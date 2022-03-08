@@ -220,7 +220,7 @@ confirm_word:
     ; 1) compare if it's in the word list
     call check_valid_word
     cmp ah, 0                       ; if ah == 0, then word is valid
-    jne error_not_in_dictionary     ; TODO: display an error here
+    jne error_not_in_dictionary
 
     ; 2) compare with the selected word and set state
     call update_word_state
