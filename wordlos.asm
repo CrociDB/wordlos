@@ -251,18 +251,29 @@ win_word:
     call draw_keyboard
 
     ; add score
-    ; TODO: add the right score
+    xor ah, ah
+    mov al, byte [game_state_word]  ; get current word level
+    shl ax, 1
+    add ax, c_score_board
+    mov bx, ax                      ; get address of current score info
+
     mov ax, [game_score]
-    add ax, [c_score_board]
+    add ax, [bx]
     mov [game_score], ax
 
     ; print score
-    mov ax, [game_score]
     mov di, SCORE_VALUE_POSITION
     mov byte [general_value], 0x0F
     call print_number
 
-    mov bp, c_message_win   ; TODO: find the right win message
+    ; show current score message
+    xor ah, ah
+    mov al, byte [game_state_word]  ; get current word level
+    mov bx, 24                      ; 24 chars/bytes per message
+    mul bx                          ; multiply the amount of chars by the current level to get right message
+
+    add ax, c_message_win           ; add the address of the messages
+    mov bp, ax
     mov ah, MESSAGE_COLOR_SUCCESS
     call message_state
     jmp start_game
