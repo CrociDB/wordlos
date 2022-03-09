@@ -78,14 +78,14 @@ _reset_keyboard:
     mov ah, 0x00                        ; BIOS service to get system time
     int 0x1a                            ; AX contains the value
 
-    mov bx, word [word_count]           ; get the amount of words
+    mov bx, word [common_count]           ; get the amount of words
     mov ax, dx                          ; Copies the time fetched by interruption
     xor dx, dx                          ; Resets DX because DIV will use DXAX
     div bx                              ; AX = (DXAX) / bx ; DX = remainder
     mov ax, dx                          ; moves the current word index to AX
     mov bx, 5
     mul bx
-    add ax, word_list 
+    add ax, common_word_list 
     mov [game_selected_world], ax
 
 main_loop:
