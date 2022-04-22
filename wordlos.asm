@@ -84,11 +84,12 @@ _reset_keyboard:
     div bx                              ; AX = (DXAX) / bx ; DX = remainder
     mov ax, dx                          ; moves the current word index to AX
     mov bx, 5
-    mul bx
+    mul bx    
     add ax, common_word_list 
-    mov [game_selected_world], ax
+    mov [game_selected_word], ax
 
-main_loop:
+    ; 6) copy selected word to the temp variable    
+main_loop:    
     call draw_board
     call draw_keyboard
 
@@ -280,8 +281,9 @@ win_word:
 
 lost_word:
     call draw_board
+    call draw_keyboard
 
-    mov bp, [game_selected_world]
+    mov bp, [game_selected_word]
     mov ah, MESSAGE_COLOR_SUCCESS
     mov cx, MESSAGE_POSITION + 36
     mov bx, 5
@@ -530,14 +532,32 @@ _check_equal_letter_continue:
     ;                   1 if all right
     ;
 update_word_state:
-    mov ax, 0
-    mov [general_counter], ax
+    ; copy the currently selected word to temp variable - we will operate on it
+    push cs    
+    pop es
+
+    mov si, [game_selected_word]
+    lea di, [game_selected_temp_word]
+    mov cx, 5
+    rep movsb
+    
     ; get access to the current word
     mov ax, 5                       ; 5 letter per word
     mov bl, byte [game_state_word]  ; get current word
     mul bl                          ; multiply by the amount of words
     add ax, game_words              ; adding the offset to the address
-    mov [general_ptr1], ax          ; saving it to the pointer variable
+    mov [general_ptr1], ax          ; saving it to the pointer variable    
+
+    ; copy currently entered word to temp variabel - we will operate on it
+    mov si, [general_ptr1]    
+    lea di, [game_state_temp_word]
+    mov cx, 5
+    rep movsb
+
+    mov ax, 0xb800
+    mov es, ax
+    xor ax, ax
+    mov [general_counter], ax
 
     ; get access to the current word's state
     mov ax, 5                       ; 5 letter per word
@@ -547,105 +567,63 @@ update_word_state:
     mov [general_ptr2], ax          ; saving it to the pointer variable
 
     ; for every letter:
-    mov cx, 5
-_letter_iteration:
+    mov cx, 0
+    ; first we check the greens
+_green_letter_iteration:
+    mov [general_value], cx
     ; 1) check if the same index letter is the same, then green
-    mov [general_value], cx         ; saving current main word letter
-    mov ax, [general_ptr1]          ; pointer to the word
+    mov ax, [general_ptr1] ; pointer to the word
     add ax, cx                      ; add letter offset
-    dec ax
     mov bp, ax
-    mov ah, byte [bp]               ; copy letter to ah
-    mov byte [game_l], ah           ; also store it on game_l
+    mov ah, byte [bp]               ; copy letter to ah    
 
     push ax
-    mov ax, [game_selected_world]   ; pointer to the word
+    lea ax, [game_selected_temp_word]   ; pointer to the word
     add ax, cx                      ; add letter offset
-    dec ax
     mov bp, ax
     pop ax
     mov al, byte [bp]
 
     cmp ah, al                      ; check if the letters are the same
     je _update_set_green
-
-    ; 2) check if any of the letters is right
-    push cx
-    mov cx, 5
+_update_green_loop:
+    inc cx
+    cmp cx, 5
+    jne _green_letter_iteration
+    
+    ; secondly we check the yellows
+    mov cx, 0
+_yellow_letter_iteration:
+    mov [general_value], cx    
+    lea bx, [game_state_temp_word]
+    add bx, [general_value]
+    mov bl, byte [bx]
+    cmp bl, 0
+    je  _update_yellow_loop
+    mov cx, 0
 _letter_in_word_iteration:
-    mov ax, [game_selected_world]   ; pointer to the word
+    lea ax, [game_selected_temp_word]          ; pointer to the entered word
     add ax, cx                      ; add letter offset
-    dec ax
     mov bp, ax
     mov al, byte [bp]
-    mov ah, byte [game_l]
 
-    cmp ah, al                      ; check if the letters are the same
+    cmp bl, al                      ; check if the letters are the same
     je _update_set_yellow
-    
-    mov ax, [general_ptr2]          ; pointer to the word
-    add ax, [general_value]         ; add letter offset
-    dec ax
-    mov bp, ax
-    mov byte [bp], STATE_COLOR_NOTINWORD   ; set 'letter not in word' state
-    loop _letter_in_word_iteration
+    inc cx
+    cmp cx, 5
+    jne _letter_in_word_iteration
 
     ; set letter state
     mov bx, [general_ptr1]          ; pointer to the word
-    add bx, [general_value]         ; add letter offset
-    dec bx
+    add bx, [general_value]         ; add letter offset    
     mov ah, byte [bx]               ; copy the character
     mov al, KEYBOARD_COLOR_NOTINWORD
     call set_letter_state
-    pop cx
-    jmp _update_loop
-
-_update_set_yellow:
-    ; set this letter state to yellow
-    mov ax, [general_ptr2]          ; pointer to the word
-    add ax, [general_value]         ; add letter offset
-    dec ax
-    mov bp, ax
-    mov byte [bp], STATE_COLOR_INWORD  ; set 'letter in word' state
-    
-    ; set letter state
-    mov bx, [general_ptr1]          ; pointer to the word
-    add bx, [general_value]         ; add letter offset
-    dec bx
-    mov ah, byte [bx]               ; copy the character
-    mov al, KEYBOARD_COLOR_INWORD
-    call set_letter_state
-    pop cx
-    jmp _update_loop
-
-    
-_update_set_green:
-    mov ax, [general_counter]
-    inc ax
-    mov [general_counter], ax
-    ; set this letter state to green
-    mov ax, [general_ptr2]          ; pointer to the word
-    add ax, cx                      ; add letter offset
-    dec ax
-    mov bp, ax
-    mov byte [bp], STATE_COLOR_CORRECT ; set 'letter in right position' state
-
-    ; set letter state
-    mov bx, [general_ptr1]          ; pointer to the word
-    add bx, [general_value]         ; add letter offset
-    dec bx
-    mov ah, byte [bx]               ; copy the character
-    mov al, KEYBOARD_COLOR_CORRECT
-    push cx
-    call set_letter_state
-    pop cx
-    jmp _update_loop
-
-_update_loop:
-    dec cx
-    jnz _letter_iteration
-    jmp _return
-
+_update_yellow_loop:
+    mov cx, [general_value]
+    inc cx
+    cmp cx, 5
+    jne _yellow_letter_iteration
 _return:
     mov ax, [general_counter]
     cmp ax, 5
@@ -655,6 +633,63 @@ _return:
 _return_win:
     mov ah, 1
     ret
+
+_update_set_yellow:
+    ; set this letter state to yellow
+    mov ax, [general_ptr2]          ; pointer to the word
+    add ax, [general_value]         ; add letter offset
+    mov bp, ax
+    
+    mov byte [bp], STATE_COLOR_INWORD  ; set 'letter in word' state
+
+_skip_update_set_yellow:
+    ; remove matched letter from the temp word storage
+    lea bx, [game_selected_temp_word]
+    add bx, cx
+    mov byte [bx], 0
+
+    lea bx, [game_state_temp_word]
+    add bx, [general_value]
+    mov byte [bx], 0
+    
+    ; set letter state
+    mov bx, [general_ptr1]          ; pointer to the word
+    add bx, [general_value]         ; add letter offset
+    mov ah, byte [bx]               ; copy the character
+    mov al, KEYBOARD_COLOR_INWORD
+    call set_letter_state
+
+    jmp _update_yellow_loop
+
+
+_update_set_green:
+    mov ax, [general_counter]
+    inc ax
+    mov [general_counter], ax
+    ; set this letter state to green
+    mov ax, [general_ptr2]          ; pointer to the word
+    add ax, cx                      ; add letter offset
+    mov bp, ax    
+    mov byte [bp], STATE_COLOR_CORRECT ; set 'letter in right position' state
+
+    ; remove matched letter from the temp word storage
+    lea bx, [game_selected_temp_word]
+    add bx, [general_value]
+    mov byte [bx], 0
+
+    lea bx, [game_state_temp_word]
+    add bx, [general_value]
+    mov byte [bx], 0
+
+    ; set letter state
+    mov bx, [general_ptr1]          ; pointer to the word
+    add bx, [general_value]         ; add letter offset
+    mov ah, byte [bx]               ; copy the character
+    mov al, KEYBOARD_COLOR_CORRECT
+    push cx
+    call set_letter_state
+    pop cx
+    jmp _update_green_loop
 
     ;
     ; Set Letter State function
@@ -676,7 +711,26 @@ _set_letter:
     mov bp, game_keyboard_state
     add bp, cx
     dec bp
+    cmp al, KEYBOARD_COLOR_CORRECT
+    je _set_color
+    cmp al, KEYBOARD_COLOR_INWORD
+    je _check_if_not_green_already
+    cmp al, KEYBOARD_COLOR_NOTINWORD
+    je _check_if_empty
+    jmp _set_color
+
+_check_if_not_green_already:
+    cmp byte [bp], KEYBOARD_COLOR_CORRECT
+    jne _set_color
+    jmp _set_letter_exit
+_check_if_empty:
+    cmp byte [bp], KEYBOARD_COLOR_EMPTY
+    je _set_color
+    jmp _set_letter_exit
+
+_set_color:
     mov byte [bp], al
+_set_letter_exit:
     ret
 
 ;;; BASE LIBRARY
@@ -684,9 +738,11 @@ _set_letter:
 
 
 ;;; GAME GLOBAL VARIABLES
-game_selected_world:        dw 0            ; pointer to the selected word in the list
+game_selected_word:         dw 0            ; pointer to the selected word in the list
+game_selected_temp_word:    times 5 db 0    ; selected word temporal storage
 game_state_letter:          db 0            ; current letter
 game_state_word:            db 0            ; current word
+game_state_temp_word:       times 5 db 0    ; current word temporary storage
 game_words:
     db "     "
     db "     "
