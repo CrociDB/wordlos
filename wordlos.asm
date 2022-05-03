@@ -84,7 +84,7 @@ _reset_keyboard:
     div bx                              ; AX = (DXAX) / bx ; DX = remainder
     mov ax, dx                          ; moves the current word index to AX
     mov bx, 5
-    mul bx    
+    mul bx
     add ax, common_word_list 
     mov [game_selected_word], ax
 
@@ -613,6 +613,10 @@ _letter_in_word_iteration:
     cmp cx, 5
     jne _letter_in_word_iteration
 
+    mov ax, [general_ptr2]          ; pointer to the word
+    add ax, [general_value]         ; add letter offset
+    mov bp, ax
+    mov byte [bp], STATE_COLOR_NOTINWORD
     ; set letter state
     mov bx, [general_ptr1]          ; pointer to the word
     add bx, [general_value]         ; add letter offset    
