@@ -23,3 +23,7 @@ In both cases, a `wordlos.com` file will be generated and it can be run on DOS, 
 ## License
 
 This project is licensed under the MIT License.
+
+## Contributors
+
+ - [Paweł Łukasik](https://github.com/pawlos)
