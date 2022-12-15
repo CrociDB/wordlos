@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="retro2048 - a 2048 game clone that runs on a boot sector, written in 8086 assembly">
+    <meta name="author" content="CrociDB">
+    <script src="js/libv86.js"></script>
+
+    <title>retro2048 - 2048 game clone that runs on a boot sector</title>
+
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <main role="main" class="container main-container">
+        <h1 id="wordlos-wordle-clone-for-dos" class="mt-5">WORDLOS - Wordle Clone for DOS</h1>
+        <p class="lead">Just another clone of Wordle for DOS using x86 16bit Assembly.</p>
+        <p><img src="/screenshot/wordlos1.gif" style="width: 100%" alt="WORDLOS for DOS"></p>
+
+        <h2 id="play" class="mt-5">Play Online</h2>
+        <div id="screen_container" class="">
+            <div style="white-space: pre; font: 14px monospace; line-height: 14px; margin-left: 25px"></div>
+            <canvas style="display: none"></canvas>
+        </div>
+
+        
+        <h2 id="download" class="mt-5">Download</h2>
+        <p>Binary version of this game can be downloaded at the <a href="https://github.com/CrociDB/wordlos/releases">Releases</a> section.</p>
+        
+        <h2 id="building" class="mt-5">Building</h2>
+        <p><em>WORDLOS</em> is built using <em>NASM</em>. So once you have that installed, all you need to do is:</p>
+        <p><code>$ make</code></p>
+        <p>In case there are no make tool available, you can directly compile it with:</p>
+        <p><code>$ nasm -f bin -o wordlos.com wordlos.asm</code></p>
+        <p>In both cases, a <code>wordlos.com</code> file will be generated and it can be run on DOS, DOSBox or FreeDOS.</p>
+        
+        <h2 id="license" class="mt-5">License</h2>
+        <p>This project is licensed under the MIT License.</p>
+        
+        <h2 id="contributors" class="mt-5">Contributors</h2>
+
+        <ul>
+            <li><a href="https://github.com/crocidb">Bruno Croci</a></li>
+            <li><a href="https://github.com/pawlos">Paweł Łukasik</a></li>
+        </ul>
+
+        <script>
+            window.onload = function () {
+                let screen = document.getElementById("screen_container");
+                screen.classList.remove("hidden");
+
+                let emulator = new V86Starter({
+                    screen_container: screen,
+                    bios: {
+                        url: "bochs-bios.bin",
+                    },
+                    vga_bios: {
+                        url: "bochs-vgabios.bin",
+                    },
+                    fda: {
+                        url: "freedos722.img",
+                    },
+                    autostart: true,
+                });
+            }
+        </script>
+
+</main>
+
+    <footer class="footer">
+        <div class="container">
+            <span class="text-muted">WORDLOS by <a href="https://twitter.com/CrociDB">CrociDB</a> - <a href="https://github.com/CrociDB/retro2048">fork it on GitHub</a>!</span>
+        </div>
+    </footer>
+</body>
+
+</html>

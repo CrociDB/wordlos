@@ -1,0 +1,84 @@
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px; /* Margin bottom by footer height */
+}
+
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 60px; /* Set the fixed height of the footer here */
+  line-height: 60px; /* Vertically center the text there */
+  background-color: #f5f5f5;
+}
+
+.container {
+  width: auto;
+  max-width: 720px;
+  padding: 0 25px;
+}
+
+.hidden {
+  display: none;
+}
+
+.main-container {
+  background: #FBFBFB;
+  margin-bottom: 40px;
+  padding-bottom: 40px;
+}
+
+.iframe-container {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; 
+  height: 0;
+}
+
+.iframe-container iframe {
+  position: absolute;
+  top:0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.screen-container {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; 
+  height: 0;
+}
+
+.screen-container canvas {
+  position: absolute;
+  top:0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+h1 {
+  text-align: center;
+  font-size: 3rem;
+}
+
+h2 {
+  margin-bottom: 20px;
+}
+
+pre {
+  background: #EAEAEA;
+  padding: 10px;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+b {
+  background: #EAEAEA;
+  padding: 5px;
+}
