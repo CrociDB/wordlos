@@ -22,7 +22,7 @@
         <p><img src="screenshot/wordlos1.gif" style="width: 100%" alt="WORDLOS for DOS"></p>
 
         <h2 id="play" class="mt-5">Play Online</h2>
-        <div id="screen_container" class="">
+        <div id="screen_container" class="game">
             <div style="white-space: pre; font: 14px monospace; line-height: 14px; margin-left: 25px"></div>
             <canvas style="display: none"></canvas>
         </div>
@@ -56,13 +56,13 @@
                 let emulator = new V86Starter({
                     screen_container: screen,
                     bios: {
-                        url: "bochs-bios.bin",
+                        url: "seabios.bin",
                     },
                     vga_bios: {
-                        url: "bochs-vgabios.bin",
+                        url: "vgabios.bin",
                     },
                     fda: {
-                        url: "freedos722.img",
+                        url: "build/freedos722.img",
                     },
                     autostart: true,
                 });
